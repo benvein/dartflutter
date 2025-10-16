@@ -1,20 +1,20 @@
 void main() {
-  print(headTail("alma")); // "maal"
-  print(headTail("ablak")); // "aklab"
+  print(headTail("alma"));
+  print(headTail("ablak"));
 
-  print(evenFizz(4)); // "Even"
-  print(evenFizz(9)); // "Fizz"
-  print(evenFizz(12)); // "EvenFizz"
-  print(evenFizz(17)); // "17"
+  print(evenFizz(4));
+  print(evenFizz(9));
+  print(evenFizz(12));
+  print(evenFizz(17));
 
-  print(likeFibo(0)); // []
-  print(likeFibo(1)); // [0]
-  print(likeFibo(2)); // [0, 1]
-  print(likeFibo(3)); // [0, 1, 1]
-  print(likeFibo(10)); // [0, 1, 1, 1, 2, 3, 4, 6, 9, 13]
+  print(likeFibo(0));
+  print(likeFibo(1));
+  print(likeFibo(2));
+  print(likeFibo(3));
+  print(likeFibo(10));
 
-  print(vowelLower("alma")); // "aLMa"
-  print(vowelLower("ablak")); // "aBLaK"
+  print(vowelLower("alma"));
+  print(vowelLower("ablak"));
 }
 
 String headTail(String txt) {
