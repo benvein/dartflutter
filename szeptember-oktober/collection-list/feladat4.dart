@@ -21,14 +21,14 @@ void main() {
     }
   }
 
-  List<int> fiboSqParatlan = [];
+  /*List<int> fiboSqParatlan = [];
   for (var i = 0; i < fiboSquare.length; i++) {
     if (i % 2 != 0) {
       fiboSqParatlan.add(fiboSquare[i]);
     }
-  }
+  }*/
 
-  List<int> combinedList = [...fiboListParatlan, ...fiboSqParatlan];
+ // List<int> combinedList = [...fiboListParatlan, ...fiboSqParatlan];
 
-  print(combinedList.reversed);
+  //print(combinedList.reversed);
 }
