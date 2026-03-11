@@ -192,6 +192,17 @@ class _HotelState extends State<Hotel> {
             const SizedBox(height: 24),
             BookButton(onPressed: _showBookingSummary),
             const SizedBox(height: 24),
+            const HotelDivider(),
+            BookingSummaryTable(
+              selectedRoom: _selectedRoom,
+              roomPrice: _roomPrice(),
+              services: services,
+              selectedAmenities: _selectedAmenities,
+              wheelchairAccessible: wheelchairAccessible,
+              petFriendly: petFriendly,
+              smokingRoom: smokingRoom,
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -437,4 +448,176 @@ class HotelDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Divider(height: 32, thickness: 2, color: Colors.black12);
   }
+}
+
+// ===========================================================================
+// Booking Summary DataTable
+// ===========================================================================
+class BookingSummaryTable extends StatelessWidget {
+  final RoomType selectedRoom;
+  final String roomPrice;
+  final Map<String, bool> services;
+  final List<String> selectedAmenities;
+  final bool wheelchairAccessible;
+  final bool petFriendly;
+  final bool smokingRoom;
+
+  const BookingSummaryTable({
+    super.key,
+    required this.selectedRoom,
+    required this.roomPrice,
+    required this.services,
+    required this.selectedAmenities,
+    required this.wheelchairAccessible,
+    required this.petFriendly,
+    required this.smokingRoom,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Build rows from all selections
+    final List<_SummaryRow> rows = [];
+
+    // Room type (always selected)
+    final roomName =
+        '${selectedRoom.name[0].toUpperCase()}${selectedRoom.name.substring(1)}';
+    rows.add(_SummaryRow(
+      category: '🛏️ Room',
+      item: roomName,
+      detail: '$roomPrice / night',
+    ));
+
+    // Active services
+    for (final entry in services.entries) {
+      if (entry.value) {
+        rows.add(_SummaryRow(
+          category: '🛎️ Service',
+          item: entry.key,
+          detail: 'Enabled',
+        ));
+      }
+    }
+
+    // Selected amenities
+    for (final amenity in selectedAmenities) {
+      rows.add(_SummaryRow(
+        category: '✨ Amenity',
+        item: amenity,
+        detail: 'Included',
+      ));
+    }
+
+    // Special needs
+    if (wheelchairAccessible) {
+      rows.add(const _SummaryRow(
+        category: '♿ Special Need',
+        item: 'Wheelchair Accessible',
+        detail: 'Yes',
+      ));
+    }
+    if (petFriendly) {
+      rows.add(const _SummaryRow(
+        category: '🐾 Special Need',
+        item: 'Pet Friendly',
+        detail: 'Yes',
+      ));
+    }
+    if (smokingRoom) {
+      rows.add(const _SummaryRow(
+        category: '🚬 Special Need',
+        item: 'Smoking Room',
+        detail: 'Yes',
+      ));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle(title: 'Your Selections'),
+        const SizedBox(height: 8),
+        if (rows.length == 1)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.0),
+            child: Text(
+              'Only the room is selected. Pick services, amenities, or special needs to see them here!',
+              style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+            ),
+          ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            headingRowColor: WidgetStateProperty.all(Colors.indigo.shade50),
+            dataRowColor: WidgetStateProperty.resolveWith<Color?>(
+              (states) => null,
+            ),
+            border: TableBorder.all(
+              color: Colors.indigo.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            columns: const [
+              DataColumn(
+                label: Text(
+                  'Category',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
+                  ),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Item',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
+                  ),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'Detail',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
+                  ),
+                ),
+              ),
+            ],
+            rows: rows
+                .map(
+                  (row) => DataRow(
+                    cells: [
+                      DataCell(Text(row.category)),
+                      DataCell(Text(
+                        row.item,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      )),
+                      DataCell(Text(
+                        row.detail,
+                        style: TextStyle(
+                          color: Colors.green.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )),
+                    ],
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryRow {
+  final String category;
+  final String item;
+  final String detail;
+
+  const _SummaryRow({
+    required this.category,
+    required this.item,
+    required this.detail,
+  });
 }
