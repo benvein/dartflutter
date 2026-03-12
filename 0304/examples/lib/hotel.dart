@@ -24,6 +24,9 @@ class _HotelState extends State<Hotel> {
     'Do Not Disturb': false,
   };
 
+  // --- Active services list (for dismissable cards) ---
+  List<String> _activeServices = [];
+
   // --- Checkboxes: Amenities ---
   final List<String> _allAmenities = [
     'Wi-Fi',
@@ -151,6 +154,11 @@ class _HotelState extends State<Hotel> {
               onChanged: (String key, bool value) {
                 setState(() {
                   services[key] = value;
+                  if (value && !_activeServices.contains(key)) {
+                    _activeServices.add(key);
+                  } else if (!value) {
+                    _activeServices.remove(key);
+                  }
                 });
               },
             ),
@@ -201,6 +209,34 @@ class _HotelState extends State<Hotel> {
               wheelchairAccessible: wheelchairAccessible,
               petFriendly: petFriendly,
               smokingRoom: smokingRoom,
+            ),
+            const SizedBox(height: 16),
+            ActiveServicesCards(
+              activeServices: _activeServices,
+              onDismissed: (String key, int index) {
+                final removedService = key;
+                setState(() {
+                  _activeServices.removeAt(index);
+                  services[key] = false;
+                });
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('$removedService removed'),
+                    showCloseIcon: true,
+                    behavior: SnackBarBehavior.floating,
+                    action: SnackBarAction(
+                      label: 'Undo',
+                      onPressed: () {
+                        setState(() {
+                          _activeServices.insert(index, removedService);
+                          services[removedService] = true;
+                        });
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 24),
           ],
@@ -451,6 +487,90 @@ class HotelDivider extends StatelessWidget {
 }
 
 // ===========================================================================
+// Active Services Cards (Dismissable)
+// ===========================================================================
+class ActiveServicesCards extends StatelessWidget {
+  final List<String> activeServices;
+  final void Function(String key, int index) onDismissed;
+
+  const ActiveServicesCards({
+    super.key,
+    required this.activeServices,
+    required this.onDismissed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (activeServices.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle(title: 'Active Services'),
+        const SizedBox(height: 4),
+        const Text(
+          'Swipe to remove a service:',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...List.generate(activeServices.length, (index) {
+          final service = activeServices[index];
+          return Dismissible(
+            key: ValueKey(service),
+            direction: DismissDirection.horizontal,
+            background: Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red.shade400,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            secondaryBackground: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red.shade400,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            onDismissed: (_) {
+              onDismissed(service, index);
+            },
+            child: Card(
+              elevation: 2,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              color: Colors.indigo.shade50,
+              child: ListTile(
+                leading: const Icon(Icons.room_service, color: Colors.indigo),
+                title: Text(
+                  service,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                trailing: const Icon(Icons.swipe, color: Colors.grey, size: 20),
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+// ===========================================================================
 // Booking Summary DataTable
 // ===========================================================================
 class BookingSummaryTable extends StatelessWidget {
@@ -481,53 +601,61 @@ class BookingSummaryTable extends StatelessWidget {
     // Room type (always selected)
     final roomName =
         '${selectedRoom.name[0].toUpperCase()}${selectedRoom.name.substring(1)}';
-    rows.add(_SummaryRow(
-      category: '🛏️ Room',
-      item: roomName,
-      detail: '$roomPrice / night',
-    ));
+    rows.add(
+      _SummaryRow(
+        category: '🛏️ Room',
+        item: roomName,
+        detail: '$roomPrice / night',
+      ),
+    );
 
     // Active services
     for (final entry in services.entries) {
       if (entry.value) {
-        rows.add(_SummaryRow(
-          category: '🛎️ Service',
-          item: entry.key,
-          detail: 'Enabled',
-        ));
+        rows.add(
+          _SummaryRow(
+            category: '🛎️ Service',
+            item: entry.key,
+            detail: 'Enabled',
+          ),
+        );
       }
     }
 
     // Selected amenities
     for (final amenity in selectedAmenities) {
-      rows.add(_SummaryRow(
-        category: '✨ Amenity',
-        item: amenity,
-        detail: 'Included',
-      ));
+      rows.add(
+        _SummaryRow(category: '✨ Amenity', item: amenity, detail: 'Included'),
+      );
     }
 
     // Special needs
     if (wheelchairAccessible) {
-      rows.add(const _SummaryRow(
-        category: '♿ Special Need',
-        item: 'Wheelchair Accessible',
-        detail: 'Yes',
-      ));
+      rows.add(
+        const _SummaryRow(
+          category: '♿ Special Need',
+          item: 'Wheelchair Accessible',
+          detail: 'Yes',
+        ),
+      );
     }
     if (petFriendly) {
-      rows.add(const _SummaryRow(
-        category: '🐾 Special Need',
-        item: 'Pet Friendly',
-        detail: 'Yes',
-      ));
+      rows.add(
+        const _SummaryRow(
+          category: '🐾 Special Need',
+          item: 'Pet Friendly',
+          detail: 'Yes',
+        ),
+      );
     }
     if (smokingRoom) {
-      rows.add(const _SummaryRow(
-        category: '🚬 Special Need',
-        item: 'Smoking Room',
-        detail: 'Yes',
-      ));
+      rows.add(
+        const _SummaryRow(
+          category: '🚬 Special Need',
+          item: 'Smoking Room',
+          detail: 'Yes',
+        ),
+      );
     }
 
     return Column(
@@ -588,17 +716,21 @@ class BookingSummaryTable extends StatelessWidget {
                   (row) => DataRow(
                     cells: [
                       DataCell(Text(row.category)),
-                      DataCell(Text(
-                        row.item,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      )),
-                      DataCell(Text(
-                        row.detail,
-                        style: TextStyle(
-                          color: Colors.green.shade700,
-                          fontWeight: FontWeight.bold,
+                      DataCell(
+                        Text(
+                          row.item,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
-                      )),
+                      ),
+                      DataCell(
+                        Text(
+                          row.detail,
+                          style: TextStyle(
+                            color: Colors.green.shade700,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 )
